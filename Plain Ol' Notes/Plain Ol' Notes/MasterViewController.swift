@@ -8,28 +8,41 @@
 
 import UIKit
 
+var objects: [String] = [String]()
+var currentIndex:Int = 0
+var masterView: MasterViewController?
+var detailViewController: DetailViewController?
+
+let kNotes:String = "Notes"
+let BLANK_NOTE:String = "(New Note)"
+
 class MasterViewController: UITableViewController {
 
-    var detailViewController: DetailViewController? = nil
-    var objects = [AnyObject]()
-
+//    var detailViewController: DetailViewController? = nil
+//    var objects = [AnyObject]()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        masterView = self
         // Do any additional setup after loading the view, typically from a nib.
+        load()
         self.navigationItem.leftBarButtonItem = self.editButtonItem()
 
         let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "insertNewObject:")
         self.navigationItem.rightBarButtonItem = addButton
-        if let split = self.splitViewController {
-            let controllers = split.viewControllers
-            self.detailViewController = (controllers[controllers.count-1] as! UINavigationController).topViewController as? DetailViewController
-        }
     }
 
     override func viewWillAppear(animated: Bool) {
         self.clearsSelectionOnViewWillAppear = self.splitViewController!.collapsed
         super.viewWillAppear(animated)
+        save()
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
+        if objects.count == 0 {
+            insertNewObject(self)
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -38,9 +51,14 @@ class MasterViewController: UITableViewController {
     }
 
     func insertNewObject(sender: AnyObject) {
-        objects.insert(NSDate(), atIndex: 0)
-        let indexPath = NSIndexPath(forRow: 0, inSection: 0)
-        self.tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+        if objects.count == 0 || objects[0] != BLANK_NOTE {
+            objects.insert(BLANK_NOTE, atIndex: 0)
+            let indexPath = NSIndexPath(forRow: 0, inSection: 0)
+            self.tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+        }
+        
+        currentIndex = 0
+        self.performSegueWithIdentifier("showDetail", sender: self )
     }
 
     // MARK: - Segues
@@ -48,11 +66,12 @@ class MasterViewController: UITableViewController {
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if segue.identifier == "showDetail" {
             if let indexPath = self.tableView.indexPathForSelectedRow {
-                let object = objects[indexPath.row] as! NSDate
-                let controller = (segue.destinationViewController as! UINavigationController).topViewController as! DetailViewController
-                controller.detailItem = object
-                controller.navigationItem.leftBarButtonItem = self.splitViewController?.displayModeButtonItem()
-                controller.navigationItem.leftItemsSupplementBackButton = true
+                let object = objects[indexPath.row]
+                currentIndex = indexPath.row
+                
+                detailViewController?.detailItem = object
+                detailViewController?.navigationItem.leftBarButtonItem = self.splitViewController?.displayModeButtonItem()
+                detailViewController?.navigationItem.leftItemsSupplementBackButton = true
             }
         }
     }
@@ -70,8 +89,8 @@ class MasterViewController: UITableViewController {
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
 
-        let object = objects[indexPath.row] as! NSDate
-        cell.textLabel!.text = object.description
+        let object = objects[indexPath.row]
+        cell.textLabel!.text = object
         return cell
     }
 
@@ -88,7 +107,29 @@ class MasterViewController: UITableViewController {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
         }
     }
-
+    
+    override func setEditing(editing: Bool, animated: Bool) {
+        super.setEditing(editing, animated: animated)
+        if editing {
+            return
+        }
+        save()
+    }
+    
+    override func tableView(tableView: UITableView, didEndEditingRowAtIndexPath indexPath: NSIndexPath) {
+        save()
+    }
+    
+    func save() {
+        NSUserDefaults.standardUserDefaults().setObject(objects, forKey: kNotes)
+        NSUserDefaults.standardUserDefaults().synchronize()
+    }
+    
+    func load() {
+        if let loadedData = NSUserDefaults.standardUserDefaults().arrayForKey(kNotes) as? [String] {
+            objects = loadedData
+        }
+    }
 
 }
 
