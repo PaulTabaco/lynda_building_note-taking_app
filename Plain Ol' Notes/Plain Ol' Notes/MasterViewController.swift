@@ -28,7 +28,7 @@ class MasterViewController: UITableViewController {
         load()
         self.navigationItem.leftBarButtonItem = self.editButtonItem()
 
-        let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "insertNewObject:")
+        let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: #selector(MasterViewController.insertNewObject(_:)))
         self.navigationItem.rightBarButtonItem = addButton
     }
 
@@ -125,7 +125,7 @@ class MasterViewController: UITableViewController {
         save()
     }
     
-    override func tableView(tableView: UITableView, didEndEditingRowAtIndexPath indexPath: NSIndexPath) {
+    override func tableView(tableView: UITableView, didEndEditingRowAtIndexPath indexPath: NSIndexPath?) {
         detailViewController?.detailDescriptionLabel.editable = false
         detailViewController?.detailDescriptionLabel.text = ""
         save()
